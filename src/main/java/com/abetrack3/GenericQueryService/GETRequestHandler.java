@@ -8,7 +8,7 @@ import java.util.Map;
 public class GETRequestHandler {
 
     @GetMapping(value="/")
-    public String handleQuery(@RequestParam Map param) {
+    public String handleQuery(@RequestParam Map<String, String> param) {
         System.out.println(param);
         System.out.println("param.size() = " + param.size());
         return "Request Received";
