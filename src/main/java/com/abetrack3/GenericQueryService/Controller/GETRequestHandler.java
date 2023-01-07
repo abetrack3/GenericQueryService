@@ -1,4 +1,4 @@
-package com.abetrack3.GenericQueryService;
+package com.abetrack3.GenericQueryService.Controller;
 
 import org.springframework.web.bind.annotation.*;
 
@@ -8,10 +8,8 @@ import java.util.Map;
 public class GETRequestHandler {
 
     @GetMapping(value="/")
-    public String handleQuery(@RequestParam Map<String, String> param) {
-        System.out.println(param);
-        System.out.println("param.size() = " + param.size());
-        return "Request Received";
+    public String handleQuery(@RequestParam Map<String, String> queryParamsMap) {
+        return queryParamsMap.toString();
     }
 
 }
