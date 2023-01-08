@@ -8,7 +8,7 @@ import java.util.Map;
 public class GETRequestHandler {
 
     @GetMapping(value="/")
-    public String handleQuery(
+    public String onQueryRequestReceived(
         @RequestParam Map<String, String> queryParamsMap,
         @RequestHeader Map<String, String> requestHeaders
     ) {
