@@ -8,8 +8,13 @@ import java.util.Map;
 public class GETRequestHandler {
 
     @GetMapping(value="/")
-    public String handleQuery(@RequestParam Map<String, String> queryParamsMap) {
-        return queryParamsMap.toString();
+    public String handleQuery(
+        @RequestParam Map<String, String> queryParamsMap,
+        @RequestHeader Map<String, String> requestHeaders
+    ) {
+        return queryParamsMap.toString() +
+                "\n" +
+                "x-service-id = " + requestHeaders.get("x-service-id");
     }
 
 }
