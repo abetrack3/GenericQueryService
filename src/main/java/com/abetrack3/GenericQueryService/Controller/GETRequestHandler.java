@@ -1,5 +1,6 @@
 package com.abetrack3.GenericQueryService.Controller;
 
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -9,11 +10,16 @@ public class GETRequestHandler {
 
     @GetMapping(value="/")
     public String onQueryRequestReceived(
-        @RequestParam Map<String, String> queryParamsMap,
+        @RequestParam MultiValueMap<String, String> multiMap,
         @RequestHeader Map<String, String> requestHeaders
     ) {
-        return queryParamsMap.toString() +
-                "\n" +
+
+        System.out.println("multiMap = " + multiMap);
+        System.out.println("requestHeaders = " + requestHeaders);
+
+
+        return "multiMap = " + multiMap.toString()
+                + "\n" +
                 "x-service-id = " + requestHeaders.get("x-service-id");
     }
 
