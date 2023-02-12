@@ -1,11 +1,13 @@
 package com.abetrack3.GenericQueryService.Controller;
 
 import com.abetrack3.GenericQueryService.Controller.Data.DatabaseNameProvider;
+import com.abetrack3.GenericQueryService.Controller.QueryServiceCore.Exceptions.InsufficientQueryValuesException;
 import com.abetrack3.GenericQueryService.Controller.QueryServiceCore.QueryExecutioner;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Map;
@@ -58,29 +60,39 @@ public class GETRequestHandler {
         }
 
         StringBuilder queryResultStringBuilder = new StringBuilder("[");
-        for (int index = 0; index < queryIds.size(); index++) {
+        try {
+            for (int index = 0; index < queryIds.size(); index++) {
 
-            QueryExecutioner executioner = new QueryExecutioner(
-                    queryIds.get(index),
-                    queryValues.get(index),
-                    databaseName
-            );
+                QueryExecutioner executioner =  new QueryExecutioner(
+                        queryIds.get(index),
+                        queryValues.get(index),
+                        databaseName
+                );
 
-            String eachQueryResult = "[" + executioner.execute() + "]";
+                String eachQueryResult = executioner.execute();
 
-            if (index > 0) {
-                queryResultStringBuilder.append(',');
+                if (index > 0) {
+                    queryResultStringBuilder.append(',');
+                }
+
+                queryResultStringBuilder.append(eachQueryResult);
+
             }
 
-            queryResultStringBuilder.append(eachQueryResult);
+            queryResultStringBuilder.append(']');
 
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(queryResultStringBuilder.toString());
+        }
+        catch (InsufficientQueryValuesException exception) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Insufficient data in query param: \"values\"",
+                    exception
+            );
         }
 
-        queryResultStringBuilder.append(']');
-
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(queryResultStringBuilder.toString());
     }
 
 }

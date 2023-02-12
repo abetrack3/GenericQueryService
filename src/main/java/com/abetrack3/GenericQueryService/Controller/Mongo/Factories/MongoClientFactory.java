@@ -11,14 +11,13 @@ import static com.abetrack3.GenericQueryService.Controller.Mongo.Factories
 
 public class MongoClientFactory {
 
-    private static final UuidRepresentation AGREED_REPRESENTATION;
+
 
     private static final String DB_HOSTNAME;
     private static final int DB_PORT;
     private static final String MONGO_DB_URL;
 
     static {
-        AGREED_REPRESENTATION = UuidRepresentation.C_SHARP_LEGACY;
         DB_HOSTNAME = "localhost";
         DB_PORT = 27017;
         MONGO_DB_URL = String.format("mongodb://%s:%d", DB_HOSTNAME, DB_PORT);
