@@ -3,6 +3,7 @@ package com.abetrack3.GenericQueryService.Controller.QueryServiceCore;
 import com.abetrack3.GenericQueryService.Controller.Data.CommonCollections;
 import com.abetrack3.GenericQueryService.Controller.Mongo.Factories.MongoClientFactory;
 import com.abetrack3.GenericQueryService.Controller.QueryServiceCore.Exceptions.InsufficientQueryValuesException;
+import com.abetrack3.GenericQueryService.Controller.QueryServiceCore.Exceptions.InvalidSortFieldException;
 import com.mongodb.Cursor;
 import com.mongodb.MongoClient;
 import com.mongodb.client.FindIterable;
@@ -12,6 +13,7 @@ import com.mongodb.client.MongoDatabase;
 import org.bson.BsonArray;
 import org.bson.Document;
 import org.bson.UuidRepresentation;
+import org.bson.conversions.Bson;
 
 import java.util.LinkedList;
 import java.util.stream.Collectors;
@@ -19,6 +21,8 @@ import java.util.stream.Collectors;
 import static com.abetrack3.GenericQueryService.Controller.Data.Constants.*;
 import static com.abetrack3.GenericQueryService.Controller.Mongo.Factories.DocumentCodecRegistryFactory.getDocumentCodec;
 import static com.abetrack3.GenericQueryService.Controller.Mongo.Factories.JsonWriterSettingsFactory.getJsonWriterSettings;
+import static com.mongodb.client.model.Sorts.ascending;
+import static com.mongodb.client.model.Sorts.descending;
 
 public class QueryExecutioner {
 
@@ -50,7 +54,7 @@ public class QueryExecutioner {
         this.mongoClient = MongoClientFactory.getClient();
     }
 
-    public String execute() {
+    public String execute() throws InvalidSortFieldException {
         this.fetchQueryTemplate();
         this.queryData();
         this.mongoClient.close();
@@ -75,12 +79,13 @@ public class QueryExecutioner {
 
     }
 
-    private void queryData() {
+    private void queryData() throws InvalidSortFieldException {
 
         int pageIndex = Integer.parseInt(this.queryValues.removeLast());
         int pageSize = getClampedPageSize(Integer.parseInt(this.queryValues.removeLast()));
 
         Document filter = buildFilter();
+        Bson sorter = buildSorter();
         Document projection = buildProjection();
 
         MongoDatabase database = mongoClient.getDatabase(this.databaseName);
@@ -95,6 +100,7 @@ public class QueryExecutioner {
         try (MongoCursor<Document> cursor = collection
                 .find(filter)
                 .projection(projection)
+                .sort(sorter)
                 .skip(pageIndex * pageSize)
                 .limit(pageSize)
                 .cursor()) {
@@ -117,8 +123,48 @@ public class QueryExecutioner {
             }
 
         }
-        this.result = "[" + queryResultStringBuilder.toString() + "]";
+        this.result = "[" + queryResultStringBuilder + "]";
 
+
+    }
+
+    private Bson buildSorter() throws InvalidSortFieldException {
+
+        if (this.queryValues.size() == 0) {
+            return null;
+        }
+
+        if (this.template.allowedSorts == null || this.template.allowedSorts.size() == 0) {
+            return null;
+        }
+
+        String fieldName = this.queryValues.getFirst();
+
+        if (fieldName.equals("")) {
+            return null;
+        }
+
+        char sortCharacter = fieldName.charAt(0);
+        fieldName = fieldName.substring(1);
+
+        if (!(sortCharacter == '+') && !(sortCharacter == ' ') && !(sortCharacter == '-')) {
+            throw new InvalidSortFieldException(
+                    "Provided field: \""
+                            + fieldName
+                            + "\" does not specify the order to be sorted in"
+            );
+        }
+
+        if (!this.template.allowedSorts.contains(fieldName)) {
+            throw new InvalidSortFieldException(
+                    "Provided field: \""
+                            + fieldName
+                            + "\" is not included in Template's AllowedSorts"
+            );
+        }
+
+        boolean ascending = sortCharacter == '+' || sortCharacter == ' ';
+        return ascending ? ascending(fieldName) : descending(fieldName);
 
     }
 

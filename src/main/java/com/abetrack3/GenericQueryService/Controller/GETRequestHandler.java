@@ -2,6 +2,7 @@ package com.abetrack3.GenericQueryService.Controller;
 
 import com.abetrack3.GenericQueryService.Controller.Data.DatabaseNameProvider;
 import com.abetrack3.GenericQueryService.Controller.QueryServiceCore.Exceptions.InsufficientQueryValuesException;
+import com.abetrack3.GenericQueryService.Controller.QueryServiceCore.Exceptions.InvalidSortFieldException;
 import com.abetrack3.GenericQueryService.Controller.QueryServiceCore.QueryExecutioner;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -86,11 +87,13 @@ public class GETRequestHandler {
                     .body(queryResultStringBuilder.toString());
         }
         catch (InsufficientQueryValuesException exception) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Insufficient data in query param: \"values\"",
-                    exception
-            );
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Insufficient data in query param: \"values\"");
+        } catch (InvalidSortFieldException exception) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(exception.getMessage());
         }
 
     }
