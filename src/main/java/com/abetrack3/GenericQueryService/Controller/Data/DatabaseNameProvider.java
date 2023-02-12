@@ -10,7 +10,7 @@ public class DatabaseNameProvider {
 
     static {
         xServiceIdToDbNameMap = Map.ofEntries(
-                entry("product", "ProductReadDatabase"),
+                entry("Product", "ProductReadDatabase"),
                 entry("uam", "UserAccessManagementReadDatabase")
         );
     }
