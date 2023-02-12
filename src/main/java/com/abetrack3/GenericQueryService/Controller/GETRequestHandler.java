@@ -1,6 +1,7 @@
 package com.abetrack3.GenericQueryService.Controller;
 
 import com.abetrack3.GenericQueryService.Controller.Data.DatabaseNameProvider;
+import com.abetrack3.GenericQueryService.Controller.QueryServiceCore.QueryExecutioner;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
@@ -56,9 +57,30 @@ public class GETRequestHandler {
                     .body("Mismatch in number of query ids and queryValues");
         }
 
+        StringBuilder queryResultStringBuilder = new StringBuilder("[");
+        for (int index = 0; index < queryIds.size(); index++) {
+
+            QueryExecutioner executioner = new QueryExecutioner(
+                    queryIds.get(index),
+                    queryValues.get(index),
+                    databaseName
+            );
+
+            String eachQueryResult = "[" + executioner.execute() + "]";
+
+            if (index > 0) {
+                queryResultStringBuilder.append(',');
+            }
+
+            queryResultStringBuilder.append(eachQueryResult);
+
+        }
+
+        queryResultStringBuilder.append(']');
+
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body("Development in progress");
+                .body(queryResultStringBuilder.toString());
     }
 
 }
