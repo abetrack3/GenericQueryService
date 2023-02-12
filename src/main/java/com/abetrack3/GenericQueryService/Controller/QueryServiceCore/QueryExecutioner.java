@@ -2,15 +2,13 @@ package com.abetrack3.GenericQueryService.Controller.QueryServiceCore;
 
 import com.abetrack3.GenericQueryService.Controller.Data.CommonCollections;
 import com.abetrack3.GenericQueryService.Controller.Mongo.Factories.MongoClientFactory;
-import com.abetrack3.GenericQueryService.Controller.QueryServiceCore.Exceptions.InsufficientQueryValuesException;
-import com.abetrack3.GenericQueryService.Controller.QueryServiceCore.Exceptions.InvalidSortFieldException;
-import com.mongodb.Cursor;
+import com.abetrack3.GenericQueryService.Controller.QueryServiceCore.Exceptions.*;
 import com.mongodb.MongoClient;
-import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import org.bson.BsonArray;
+import org.bson.BsonInvalidOperationException;
 import org.bson.Document;
 import org.bson.UuidRepresentation;
 import org.bson.conversions.Bson;
@@ -31,16 +29,21 @@ public class QueryExecutioner {
     private final String queryId;
     private final LinkedList<String> queryValues;
     private final String databaseName;
-    private String result;
     private final MongoClient mongoClient;
-
+    private final String dynamicIndicesAsString;
+    private String result;
     private QueryTemplate template;
 
-//    private String resultCount
+    public QueryExecutioner(
+            String queryId,
+            String queryValuesAsString,
+            String dynamicIndicesAsString,
+            String databaseName
+    ) throws InsufficientQueryValuesException {
 
-    public QueryExecutioner(String queryId, String queryValuesAsString, String databaseName) throws InsufficientQueryValuesException {
         this.queryId = queryId;
         this.databaseName = databaseName;
+        this.dynamicIndicesAsString = dynamicIndicesAsString;
         this.queryValues = BsonArray
                 .parse(queryValuesAsString)
                 .stream()
@@ -54,7 +57,7 @@ public class QueryExecutioner {
         this.mongoClient = MongoClientFactory.getClient();
     }
 
-    public String execute() throws InvalidSortFieldException {
+    public String execute() throws InvalidSortFieldException, DynamicIndicesNotFoundException, DynamicIndicesParseFailureException, DynamicFilterAndIndicesLengthMismatchException {
         this.fetchQueryTemplate();
         this.queryData();
         this.mongoClient.close();
@@ -79,12 +82,12 @@ public class QueryExecutioner {
 
     }
 
-    private void queryData() throws InvalidSortFieldException {
+    private void queryData() throws InvalidSortFieldException, DynamicIndicesNotFoundException, DynamicIndicesParseFailureException, DynamicFilterAndIndicesLengthMismatchException {
 
         int pageIndex = Integer.parseInt(this.queryValues.removeLast());
         int pageSize = getClampedPageSize(Integer.parseInt(this.queryValues.removeLast()));
 
-        Document filter = buildFilter();
+        Document filter = template.isDynamicFilter? buildDynamicFilter() : buildFilter();
         Bson sorter = buildSorter();
         Document projection = buildProjection();
 
@@ -174,9 +177,50 @@ public class QueryExecutioner {
         return result;
     }
 
-    private Document buildFilter() {
+    private Document buildDynamicFilter() throws DynamicIndicesNotFoundException, DynamicIndicesParseFailureException, DynamicFilterAndIndicesLengthMismatchException {
 
-        String valuePopulatedFilter = this.template.filter;
+        if (this.dynamicIndicesAsString == null) {
+            throw new DynamicIndicesNotFoundException();
+        }
+
+        try {
+
+            LinkedList<Integer> dynamicIndices = BsonArray
+                    .parse(this.dynamicIndicesAsString)
+                    .stream()
+                    .map(value -> value.asInt32().getValue())
+                    .collect(Collectors.toCollection(LinkedList::new));
+
+            if (dynamicIndices.size() != this.template.dynamicFilter.size()) {
+                throw new DynamicFilterAndIndicesLengthMismatchException();
+            }
+
+            StringBuilder blankFilterStringBuilder = new StringBuilder();
+            for (int index = 0; index < dynamicIndices.size(); index++) {
+
+                int enable = dynamicIndices.get(index);
+
+                if (enable == 1) {
+                    blankFilterStringBuilder.append(this.template.dynamicFilter.get(index));
+                }
+
+            }
+
+            return buildFilter(blankFilterStringBuilder.toString());
+
+        } catch (BsonInvalidOperationException e) {
+            throw new DynamicIndicesParseFailureException();
+        }
+
+    }
+
+    private Document buildFilter() {
+        return this.buildFilter(this.template.filter);
+    }
+
+    private Document buildFilter(String blankFilter) {
+
+        String valuePopulatedFilter = blankFilter;
 
         if (valuePopulatedFilter == null) {
             return Document.parse("{}");

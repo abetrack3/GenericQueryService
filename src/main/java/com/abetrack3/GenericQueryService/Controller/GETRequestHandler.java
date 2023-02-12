@@ -1,14 +1,12 @@
 package com.abetrack3.GenericQueryService.Controller;
 
 import com.abetrack3.GenericQueryService.Controller.Data.DatabaseNameProvider;
-import com.abetrack3.GenericQueryService.Controller.QueryServiceCore.Exceptions.InsufficientQueryValuesException;
-import com.abetrack3.GenericQueryService.Controller.QueryServiceCore.Exceptions.InvalidSortFieldException;
+import com.abetrack3.GenericQueryService.Controller.QueryServiceCore.Exceptions.*;
 import com.abetrack3.GenericQueryService.Controller.QueryServiceCore.QueryExecutioner;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Map;
@@ -60,13 +58,18 @@ public class GETRequestHandler {
                     .body("Mismatch in number of query ids and queryValues");
         }
 
+        List<String> dynamicIndices = multiMap.get("dynamicIndices");
+
         StringBuilder queryResultStringBuilder = new StringBuilder("[");
         try {
             for (int index = 0; index < queryIds.size(); index++) {
 
+                String dynamicIndicesAsString = index < dynamicIndices.size() ? dynamicIndices.get(index) : null;
+
                 QueryExecutioner executioner =  new QueryExecutioner(
                         queryIds.get(index),
                         queryValues.get(index),
+                        dynamicIndicesAsString,
                         databaseName
                 );
 
@@ -94,6 +97,18 @@ public class GETRequestHandler {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(exception.getMessage());
+        } catch (DynamicIndicesNotFoundException e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getClass().toString());
+        } catch (DynamicIndicesParseFailureException e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed parsing DynamicIndices");
+        } catch (DynamicFilterAndIndicesLengthMismatchException e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Dynamic indices length does not match with query template's dynamic filter");
         }
 
     }
