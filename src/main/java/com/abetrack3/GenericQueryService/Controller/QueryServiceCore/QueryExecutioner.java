@@ -140,7 +140,7 @@ public class QueryExecutioner {
         while (this.queryValues.size() > 0 && replacePoint != -1) {
 
             String replaceValue = queryValues.removeFirst();
-            valuePopulatedFilter.replace("~", replaceValue);
+            valuePopulatedFilter = valuePopulatedFilter.replace("~", replaceValue);
 
             replacePoint = valuePopulatedFilter.indexOf('~');
         }
