@@ -22,7 +22,7 @@ public class GETRequestHandler {
 
         if (serviceId == null) {
             return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
+                    .status(HttpStatus.UNAUTHORIZED)
                     .body("x-service-id is mandatory");
         }
 
@@ -30,7 +30,7 @@ public class GETRequestHandler {
 
         if (databaseName == null) {
             return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
+                    .status(HttpStatus.UNAUTHORIZED)
                     .body("provided x-service-id is not registered in the dictionary");
         }
 
@@ -39,10 +39,9 @@ public class GETRequestHandler {
 
         if (queryValues.size() != queryIds.size()) {
             return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
+                    .status(HttpStatus.UNAUTHORIZED)
                     .body("Mismatch in number of query ids and queryValues");
         }
-
 
         return ResponseEntity
                 .status(HttpStatus.OK)
