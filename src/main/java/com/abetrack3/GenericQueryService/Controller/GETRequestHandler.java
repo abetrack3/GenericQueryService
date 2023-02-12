@@ -35,7 +35,20 @@ public class GETRequestHandler {
         }
 
         List<String> queryIds = multiMap.get("id");
+
+        if (queryIds == null) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body("Missing query param: \"id\"");
+        }
+
         List<String> queryValues = multiMap.get("values");
+
+        if (queryValues == null) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body("Missing query param: \"values\"");
+        }
 
         if (queryValues.size() != queryIds.size()) {
             return ResponseEntity
