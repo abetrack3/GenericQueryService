@@ -13,7 +13,7 @@ import java.util.Map;
 public class GETRequestHandler {
 
     @GetMapping(value="/")
-    public ResponseEntity<Object> onQueryRequestReceived(
+    public ResponseEntity<String> onQueryRequestReceived(
         @RequestParam MultiValueMap<String, String> multiMap,
         @RequestHeader Map<String, String> requestHeaders
     ) {
