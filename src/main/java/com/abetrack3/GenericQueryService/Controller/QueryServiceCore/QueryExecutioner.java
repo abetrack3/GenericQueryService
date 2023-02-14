@@ -230,7 +230,7 @@ public class QueryExecutioner {
         while (this.queryValues.size() > 0 && replacePoint != -1) {
 
             String replaceValue = queryValues.removeFirst();
-            valuePopulatedFilter = valuePopulatedFilter.replace("~", replaceValue);
+            valuePopulatedFilter = valuePopulatedFilter.replaceFirst("~", replaceValue);
 
             replacePoint = valuePopulatedFilter.indexOf('~');
         }
