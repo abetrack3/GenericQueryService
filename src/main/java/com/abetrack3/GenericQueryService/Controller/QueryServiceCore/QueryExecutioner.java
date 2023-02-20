@@ -7,6 +7,8 @@ import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Sorts;
 import org.bson.BsonArray;
 import org.bson.BsonInvalidOperationException;
@@ -15,6 +17,7 @@ import org.bson.UuidRepresentation;
 import org.bson.conversions.Bson;
 
 import java.util.LinkedList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.abetrack3.GenericQueryService.Controller.Data.Constants.*;
@@ -89,6 +92,14 @@ public class QueryExecutioner {
         int pageSize = getClampedPageSize(Integer.parseInt(this.queryValues.removeLast()));
 
         Document filter = template.isDynamicFilter? buildDynamicFilter() : buildFilter();
+        Bson rowLevelSecurityFilter = Filters.in("RolesAndIdsAllowedToRead", "anonymous");
+        Bson isMarkedToDeleteFilter = Filters.eq("IsMarkedToDelete", false);
+        Bson securityFilter = Filters.and(
+//                rowLevelSecurityFilter,
+                isMarkedToDeleteFilter,
+                isMarkedToDeleteFilter
+        );
+        Bson finalFilter = Filters.and(securityFilter, filter);
         Bson sorter = buildSorter();
         Document projection = buildProjection();
 
@@ -96,17 +107,20 @@ public class QueryExecutioner {
         MongoCollection<Document> collection = database.getCollection(this.template.source);
 
         if (this.template.countOnly) {
-            this.result = "[" + collection.countDocuments(filter) + "]";
+            this.result = "[" + collection.countDocuments(finalFilter) + "]";
             return;
         }
 
         StringBuilder queryResultStringBuilder = new StringBuilder();
+        List<Bson> aggregatesList = List.of(
+                Aggregates.match(finalFilter),
+                Aggregates.project(projection),
+                Aggregates.sort(sorter),
+                Aggregates.skip(pageIndex * pageSize),
+                Aggregates.limit(pageSize)
+        );
         try (MongoCursor<Document> cursor = collection
-                .find(filter)
-                .projection(projection)
-                .sort(sorter)
-                .skip(pageIndex * pageSize)
-                .limit(pageSize)
+                .aggregate(aggregatesList)
                 .cursor()) {
 
             for (long index = 0; cursor.hasNext(); index++) {
@@ -128,7 +142,6 @@ public class QueryExecutioner {
 
         }
         this.result = "[" + queryResultStringBuilder + "]";
-
 
     }
 
