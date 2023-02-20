@@ -3,6 +3,7 @@ package com.abetrack3.GenericQueryService.Controller;
 import com.abetrack3.GenericQueryService.Controller.Data.DatabaseNameProvider;
 import com.abetrack3.GenericQueryService.Controller.QueryServiceCore.Exceptions.*;
 import com.abetrack3.GenericQueryService.Controller.QueryServiceCore.QueryExecutioner;
+import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,18 @@ public class GETRequestHandler {
         @RequestParam MultiValueMap<String, String> multiMap,
         @RequestHeader Map<String, String> requestHeaders
     ) {
+
+        String authorizationHeader = requestHeaders.get("authorization");
+
+        if (authorizationHeader == null) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body("Jwt bearer token not found");
+        }
+        String tokenString = authorizationHeader.split(" ")[1];
+
+        String jwtTokenPayloadEncoded = tokenString.split("\\.")[1];
+        String jwtTokenPayloadDecoded = new String(Base64.decodeBase64(jwtTokenPayloadEncoded));
 
         String serviceId = requestHeaders.get("x-service-id");
 
@@ -71,7 +84,8 @@ public class GETRequestHandler {
                         queryIds.get(index),
                         queryValues.get(index),
                         dynamicIndicesAsString,
-                        databaseName
+                        databaseName,
+                        jwtTokenPayloadDecoded
                 );
 
                 String eachQueryResult = executioner.execute();

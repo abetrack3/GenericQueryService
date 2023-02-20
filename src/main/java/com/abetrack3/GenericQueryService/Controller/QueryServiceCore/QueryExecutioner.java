@@ -29,6 +29,9 @@ import static com.mongodb.client.model.Sorts.descending;
 public class QueryExecutioner {
 
     private static final int MINIMUM_NUMBER_OF_QUERY_VALUES = 2;
+    private static final String TOKEN_JSON_PAYLOAD_ROLE_KEY = "role";
+    private static final String TOKEN_JSON_PAYLOAD_USER_ID_KEY = "sub";
+    private static final String ANONYMOUS_ROLE = "anonymous";
 
     private final String queryId;
     private final LinkedList<String> queryValues;
@@ -37,12 +40,14 @@ public class QueryExecutioner {
     private final String dynamicIndicesAsString;
     private String result;
     private QueryTemplate template;
+    private List<String> rolesAndIds;
 
     public QueryExecutioner(
             String queryId,
             String queryValuesAsString,
             String dynamicIndicesAsString,
-            String databaseName
+            String databaseName,
+            String jwtTokenPayloadDecoded
     ) throws InsufficientQueryValuesException {
 
         this.queryId = queryId;
@@ -58,6 +63,16 @@ public class QueryExecutioner {
         if (queryValues.size() < MINIMUM_NUMBER_OF_QUERY_VALUES) {
             throw new InsufficientQueryValuesException();
         }
+
+        Document jwtTokenPayloadAsDocument = Document.parse(jwtTokenPayloadDecoded);
+        this.rolesAndIds = jwtTokenPayloadAsDocument.getList(TOKEN_JSON_PAYLOAD_ROLE_KEY, String.class);
+
+        if (this.rolesAndIds == null) {
+            this.rolesAndIds = List.of(ANONYMOUS_ROLE);
+        }
+
+        this.rolesAndIds.add(jwtTokenPayloadAsDocument.getString(TOKEN_JSON_PAYLOAD_USER_ID_KEY));
+
         this.mongoClient = MongoClientFactory.getClient();
     }
 
@@ -92,11 +107,10 @@ public class QueryExecutioner {
         int pageSize = getClampedPageSize(Integer.parseInt(this.queryValues.removeLast()));
 
         Document filter = template.isDynamicFilter? buildDynamicFilter() : buildFilter();
-        Bson rowLevelSecurityFilter = Filters.in("RolesAndIdsAllowedToRead", "anonymous");
+        Bson rowLevelSecurityFilter = Filters.in("RolesAndIdsAllowedToRead", rolesAndIds);
         Bson isMarkedToDeleteFilter = Filters.eq("IsMarkedToDelete", false);
         Bson securityFilter = Filters.and(
-//                rowLevelSecurityFilter,
-                isMarkedToDeleteFilter,
+                rowLevelSecurityFilter,
                 isMarkedToDeleteFilter
         );
         Bson finalFilter = Filters.and(securityFilter, filter);
