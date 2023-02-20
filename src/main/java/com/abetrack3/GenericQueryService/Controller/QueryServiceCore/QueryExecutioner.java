@@ -7,6 +7,7 @@ import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Sorts;
 import org.bson.BsonArray;
 import org.bson.BsonInvalidOperationException;
 import org.bson.Document;
@@ -133,18 +134,20 @@ public class QueryExecutioner {
 
     private Bson buildSorter() throws InvalidSortFieldException {
 
+        Bson ascendingSortById = Sorts.ascending("_id");
+
         if (this.queryValues.size() == 0) {
-            return null;
+            return ascendingSortById;
         }
 
         if (this.template.allowedSorts == null || this.template.allowedSorts.size() == 0) {
-            return null;
+            return ascendingSortById;
         }
 
         String fieldName = this.queryValues.getFirst();
 
         if (fieldName.equals("")) {
-            return null;
+            return ascendingSortById;
         }
 
         char sortCharacter = fieldName.charAt(0);
@@ -167,7 +170,8 @@ public class QueryExecutioner {
         }
 
         boolean ascending = sortCharacter == '+' || sortCharacter == ' ';
-        return ascending ? ascending(fieldName) : descending(fieldName);
+        Bson sortByField = ascending ? ascending(fieldName) : descending(fieldName);
+        return Sorts.orderBy(sortByField, ascendingSortById);
 
     }
 
