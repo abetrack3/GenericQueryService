@@ -4,6 +4,7 @@ import com.abetrack3.GenericQueryService.Controller.Data.DatabaseNameProvider;
 import com.abetrack3.GenericQueryService.Controller.QueryServiceCore.Exceptions.*;
 import com.abetrack3.GenericQueryService.Controller.QueryServiceCore.QueryExecutioner;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
@@ -87,6 +88,7 @@ public class GETRequestHandler {
 
             return ResponseEntity
                     .status(HttpStatus.OK)
+                    .contentType(MediaType.APPLICATION_JSON)
                     .body(queryResultStringBuilder.toString());
         }
         catch (InsufficientQueryValuesException exception) {
