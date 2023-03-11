@@ -1,0 +1,14 @@
+{
+  "token" : {
+    "jwtConfigurationHostSuffix": ".well-known/openid-configuration",
+    "jwkHostSuffix": ".well-known/jwks"
+  },
+  "registeredServices": {
+    "FakeServiceName": {
+      "readDatabaseName": "FakeDatabaseName"
+    }
+  },
+  "trustedIssuers": [
+    "https://fake-issuers.com/"
+  ]
+}
