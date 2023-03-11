@@ -16,6 +16,7 @@ import org.bson.Document;
 import org.bson.UuidRepresentation;
 import org.bson.conversions.Bson;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -65,10 +66,16 @@ public class QueryExecutioner {
         }
 
         Document jwtTokenPayloadAsDocument = Document.parse(jwtTokenPayloadDecoded);
-        this.rolesAndIds = jwtTokenPayloadAsDocument.getList(TOKEN_JSON_PAYLOAD_ROLE_KEY, String.class);
+        try {
+            this.rolesAndIds = jwtTokenPayloadAsDocument.getList(TOKEN_JSON_PAYLOAD_ROLE_KEY, String.class);
+        } catch (ClassCastException e) {
+            this.rolesAndIds = new ArrayList<>();
+            this.rolesAndIds.add(jwtTokenPayloadAsDocument.getString(TOKEN_JSON_PAYLOAD_ROLE_KEY));
+        }
 
         if (this.rolesAndIds == null) {
-            this.rolesAndIds = List.of(ANONYMOUS_ROLE);
+            this.rolesAndIds = new ArrayList<>();
+            rolesAndIds.add(ANONYMOUS_ROLE);
         }
 
         this.rolesAndIds.add(jwtTokenPayloadAsDocument.getString(TOKEN_JSON_PAYLOAD_USER_ID_KEY));

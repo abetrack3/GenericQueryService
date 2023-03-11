@@ -2,6 +2,7 @@ package com.abetrack3.GenericQueryService.Controller;
 
 import com.abetrack3.GenericQueryService.Controller.Data.DatabaseNameProvider;
 import com.abetrack3.GenericQueryService.Controller.QueryServiceCore.Exceptions.*;
+import com.abetrack3.GenericQueryService.Controller.QueryServiceCore.JwtTokenValidator;
 import com.abetrack3.GenericQueryService.Controller.QueryServiceCore.QueryExecutioner;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.http.HttpStatus;
@@ -10,6 +11,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
+import java.net.URISyntaxException;
+import java.security.InvalidParameterException;
 import java.util.List;
 import java.util.Map;
 
@@ -19,17 +23,26 @@ public class GETRequestHandler {
     @GetMapping(value="/")
     public ResponseEntity<String> onQueryRequestReceived(
         @RequestParam MultiValueMap<String, String> multiMap,
-        @RequestHeader Map<String, String> requestHeaders
-    ) {
+        @RequestHeader Map<String, String> requestHeaders,
+        HttpServletRequest httpRequest
+    ) throws URISyntaxException {
 
-        String authorizationHeader = requestHeaders.get("authorization");
+        String tokenString = JwtTokenValidator.getToken(httpRequest);
 
-        if (authorizationHeader == null) {
+        if (tokenString.equals("")) {
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
                     .body("Jwt bearer token not found");
         }
-        String tokenString = authorizationHeader.split(" ")[1];
+
+        try {
+            JwtTokenValidator.validate(tokenString);
+        } catch (InvalidParameterException e) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(e.getMessage());
+        }
+
 
         String jwtTokenPayloadEncoded = tokenString.split("\\.")[1];
         String jwtTokenPayloadDecoded = new String(Base64.decodeBase64(jwtTokenPayloadEncoded));
