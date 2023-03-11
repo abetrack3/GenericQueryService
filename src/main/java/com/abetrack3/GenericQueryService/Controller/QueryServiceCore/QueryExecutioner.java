@@ -1,6 +1,5 @@
 package com.abetrack3.GenericQueryService.Controller.QueryServiceCore;
 
-import com.abetrack3.GenericQueryService.Controller.Data.CommonCollections;
 import com.abetrack3.GenericQueryService.Controller.Mongo.Factories.MongoClientFactory;
 import com.abetrack3.GenericQueryService.Controller.QueryServiceCore.Exceptions.*;
 import com.mongodb.MongoClient;
@@ -33,6 +32,7 @@ public class QueryExecutioner {
     private static final String TOKEN_JSON_PAYLOAD_ROLE_KEY = "role";
     private static final String TOKEN_JSON_PAYLOAD_USER_ID_KEY = "sub";
     private static final String ANONYMOUS_ROLE = "anonymous";
+    private static final String QUERY_TEMPLATES = "QueryTemplates";
 
     private final String queryId;
     private final LinkedList<String> queryValues;
@@ -93,11 +93,7 @@ public class QueryExecutioner {
     private void fetchQueryTemplate() {
 
         MongoDatabase database = this.mongoClient.getDatabase(this.databaseName);
-        MongoCollection<Document> queryTemplatesCollection = database.getCollection(
-                CommonCollections
-                        .QUERY_TEMPLATES
-                        .name
-        );
+        MongoCollection<Document> queryTemplatesCollection = database.getCollection(QUERY_TEMPLATES);
 
         Document search = new Document("_id", this.queryId);
         Document queryTemplate = queryTemplatesCollection.find(search).first();
