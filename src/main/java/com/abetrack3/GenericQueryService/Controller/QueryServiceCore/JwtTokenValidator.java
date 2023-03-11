@@ -114,7 +114,7 @@ public class JwtTokenValidator {
         return publicKey;
     }
 
-    public static DecodedJWT validate(String token) {
+    public static void validate(String token) {
         try {
 
             final DecodedJWT jwt = JWT.decode(token);
@@ -132,7 +132,6 @@ public class JwtTokenValidator {
                     .build();
 
             verifier.verify(token);
-            return jwt;
 
         } catch (Exception e) {
 //            logger.error("Failed to validate JWT", e);
