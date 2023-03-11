@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-public class GETRequestHandler {
+public class RootAccessPointController {
 
     @GetMapping(value="/")
     public ResponseEntity<String> onQueryRequestReceived(
