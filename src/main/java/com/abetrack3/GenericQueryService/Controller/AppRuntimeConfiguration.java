@@ -78,7 +78,8 @@ public class AppRuntimeConfiguration {
         return singleton.configuration
                 .getList(TRUSTED_ISSUERS, String.class)
                 .parallelStream()
-                .map(item -> URI.create(item).getHost())
+                .map(URI::create)
+                .map(URI::getHost)
                 .collect(Collectors.toUnmodifiableList());
     }
 
